@@ -1,6 +1,7 @@
 package main
 
 import (
+	"depogunabangunan/apps/repository"
 	"depogunabangunan/apps/services"
 	"depogunabangunan/config"
 	"depogunabangunan/endpoints"
@@ -24,6 +25,10 @@ func main() {
 	}
 	defer db.Close()
 
+	//create repository instance
+	userRepository := repository.NewUserRepository(db)
+	productRepository := repository.NewProductRepository(db)
+
 	// Initialize the Gin router
 	router := gin.Default()
 
@@ -34,7 +39,7 @@ func main() {
 	})
 
 	// Initialize the endpoints
-	endpoints.InitializeEndpoints(router.Group("/api"))
+	endpoints.InitializeEndpoints(router.Group(""), db, userRepository, productRepository)
 
 	// Start the server
 	log.Println("Server started on http://localhost:8080")

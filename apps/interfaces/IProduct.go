@@ -3,7 +3,7 @@ package interfaces
 import "depogunabangunan/apps/model"
 
 // IProductRepository defines the interface for product repository operations
-type IProductRepository interface {
+type IProductService interface {
 	GetProductByID(id int64) (*model.Product, error)
 	CreateProduct(product *model.Product) error
 	UpdateProduct(product *model.Product) error

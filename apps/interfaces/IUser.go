@@ -3,7 +3,7 @@ package interfaces
 import "depogunabangunan/apps/model"
 
 // IUserRepository defines the interface for user repository operations
-type IUserRepository interface {
+type IUserService interface {
 	GetUserByID(id int64) (*model.User, error)
 	GetUserByUsername(username string) (*model.User, error)
 	CreateUser(user *model.User) error

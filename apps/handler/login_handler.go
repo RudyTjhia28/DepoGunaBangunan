@@ -3,6 +3,7 @@ package handler
 import (
 	"crypto/md5"
 	"database/sql"
+	"depogunabangunan/apps/interfaces"
 	"depogunabangunan/apps/model"
 	"encoding/hex"
 	"fmt"
@@ -13,8 +14,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type LoginHandler struct {
+	db             *sql.DB
+	userRepository interfaces.IUserService
+}
+
+func NewLoginHandler(db *sql.DB, userRepository interfaces.IUserService) *LoginHandler {
+	return &LoginHandler{
+		db:             db,
+		userRepository: userRepository,
+	}
+}
+
 // LoginHandler handles the login endpoint
-func LoginHandler(c *gin.Context, db *sql.DB) {
+func (h *LoginHandler) Login(c *gin.Context) {
 	var userLogin model.UserLogin
 	if err := c.ShouldBindJSON(&userLogin); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
@@ -22,9 +35,9 @@ func LoginHandler(c *gin.Context, db *sql.DB) {
 	}
 
 	// Retrieve the user from the database based on the provided username
-	user, err := getUserByUsernameAndPassword(db, userLogin.Username, userLogin.Pass)
+	user, err := getUserByUsernameAndPassword(h.db, userLogin.Username, userLogin.Pass)
 	if err != nil {
-		recordLoginHistory(db, userLogin.Username, false)
+		recordLoginHistory(h.db, userLogin.Username, false)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
@@ -33,10 +46,10 @@ func LoginHandler(c *gin.Context, db *sql.DB) {
 	token, err := generateJWTToken(user)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, nil)
-		recordLoginHistory(db, user.Username, false)
+		recordLoginHistory(h.db, user.Username, false)
 		return
 	}
-	recordLoginHistory(db, user.Username, true)
+	recordLoginHistory(h.db, user.Username, true)
 	c.JSON(http.StatusOK, gin.H{"token": token})
 }
 
