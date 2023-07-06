@@ -3,7 +3,7 @@ package model
 import "github.com/jinzhu/gorm"
 
 // Users struct
-type Users struct {
+type User struct {
 	gorm.Model
 	ID       int64  `gorm:"primaryKey;autoIncrement"`
 	Username string `json:"username" gorm:"uniqueIndex"`

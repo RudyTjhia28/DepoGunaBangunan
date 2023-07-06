@@ -1,6 +1,6 @@
 package interfaces
 
-import "github.com/username/depogunabangunan/apps/model"
+import "depogunabangunan/apps/model"
 
 // IUserRepository defines the interface for user repository operations
 type IUserRepository interface {

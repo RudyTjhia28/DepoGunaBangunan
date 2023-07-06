@@ -1,6 +1,6 @@
 package interfaces
 
-import "github.com/username/depogunabangunan/apps/model"
+import "depogunabangunan/apps/model"
 
 // IProductRepository defines the interface for product repository operations
 type IProductRepository interface {
