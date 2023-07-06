@@ -11,8 +11,8 @@ import (
 // ConnectDatabase establishes a connection to the PostgreSQL database
 func ConnectDatabase(cfg *config.Configuration) (*sql.DB, error) {
 	// Build the PostgreSQL connection string
-	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
-		cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.DBName)
+	connStr := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s search_path=%s sslmode=disable",
+		cfg.DBHost, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBPort, cfg.DBSchema)
 
 	// Establish the database connection
 	db, err := sql.Open("postgres", connStr)

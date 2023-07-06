@@ -1,42 +1,104 @@
 package handler
 
 import (
+	"crypto/md5"
+	"database/sql"
 	"depogunabangunan/apps/model"
+	"encoding/hex"
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
 
-var jwtKey = []byte("secret_key") // Change this with your own secret key
-
-// LoginHandler handles the login request
-func LoginHandler(c *gin.Context) {
-	// Parse the JSON request body
+// LoginHandler handles the login endpoint
+func LoginHandler(c *gin.Context, db *sql.DB) {
 	var userLogin model.UserLogin
 	if err := c.ShouldBindJSON(&userLogin); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
 		return
 	}
 
-	// Validate the login credentials (replace this with your own validation logic)
-	if userLogin.Username != "admin" || userLogin.Pass != "admin123" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
-		return
-	}
-
-	// Generate a JWT token
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"username": userLogin.Username,
-	})
-
-	// Sign the token with the secret key
-	tokenString, err := token.SignedString(jwtKey)
+	// Retrieve the user from the database based on the provided username
+	user, err := getUserByUsernameAndPassword(db, userLogin.Username, userLogin.Pass)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		recordLoginHistory(db, userLogin.Username, false)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
-	// Return the token as JSON response
-	c.JSON(http.StatusOK, gin.H{"token": tokenString})
+	// Generate and return the JWT token
+	token, err := generateJWTToken(user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, nil)
+		recordLoginHistory(db, user.Username, false)
+		return
+	}
+	recordLoginHistory(db, user.Username, true)
+	c.JSON(http.StatusOK, gin.H{"token": token})
+}
+
+// getUserByUsernameAndPassword retrieves a user from the database by username and password
+func getUserByUsernameAndPassword(db *sql.DB, username, password string) (*model.User, error) {
+	query := "SELECT id, username, password FROM users WHERE username = $1"
+	row := db.QueryRow(query, username)
+
+	user := &model.User{}
+	err := row.Scan(&user.ID, &user.Username, &user.Password)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, err
+	}
+
+	// Encrypt the provided password using MD5
+	hashedPassword := encryptMD5(password)
+
+	// Compare the hashed password with the password from the database
+	if user.Password != hashedPassword {
+		return nil, fmt.Errorf("invalid password")
+	}
+
+	return user, nil
+}
+
+// encryptMD5 encrypts the password using MD5
+func encryptMD5(password string) string {
+	hasher := md5.New()
+	hasher.Write([]byte(password))
+	return hex.EncodeToString(hasher.Sum(nil))
+}
+
+// generateJWTToken generates a JWT token for the user
+func generateJWTToken(user *model.User) (string, error) {
+	// Create the claims
+	claims := jwt.MapClaims{
+		"username": user.Username,
+		"exp":      time.Now().Add(time.Hour * 24).Unix(), // Token expiration time (1 day)
+	}
+
+	// Create the token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	// Sign the token with a secret key
+	tokenString, err := token.SignedString([]byte("your-secret-key"))
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
+}
+
+// recordLoginHistory records the login history in the database
+func recordLoginHistory(db *sql.DB, username string, success bool) error {
+	query := "INSERT INTO login_history (username, login_time, login_success) VALUES ($1, $2, $3)"
+	_, err := db.Exec(query, username, time.Now(), success)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -8,6 +8,7 @@ type User struct {
 	ID       int64  `gorm:"primaryKey;autoIncrement"`
 	Username string `json:"username" gorm:"uniqueIndex"`
 	FullName string `json:"fullname" gorm:"fullname"`
+	Password string `json:"password"`
 }
 
 // UserLogin struct
