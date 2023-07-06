@@ -1,0 +1,13 @@
+{
+    "database.username":"postgres",
+    "database.password":"password1",
+    "database.name":"accounting",
+    "database.schema":"development",
+    "database.host":"localhost",
+    "database.url":"jdbc:postgresql://localhost:5432/accounting/",
+    "database.port":"5432",
+    "database.maxOpenConnection":5,
+    "database.maxIdleConnection":5,
+    "server.port":":8000",
+    "tls.certificate.cache":"E:/TLS Cert"
+}
